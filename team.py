@@ -24,12 +24,13 @@ val1=[i for i in range(1000)]
 
 
 def minimax(depth, maximise, alpha, beta, old_move, ply, board):
-	if depth>depth_limit:
-		return board.heuristic(ply)
-	possible_moves = board.find_valid_move_cells(old_move)
 	conj="o";
 	if conj==ply:
 		conj="x"
+	if depth>depth_limit:
+		return board.heuristic(conj)
+	possible_moves = board.find_valid_move_cells(old_move)
+
 	if maximise:
 		bestvalue=float("-inf")
 		for c in possible_moves:
@@ -106,13 +107,6 @@ class Manual_Player:
 			board.small_boards_status[c[0]][c[1]/3][c[2]/3]=temp_small_boards_status		
 		return selected
 
-def hvalue(x):
-	if x == 'x':
-		return 1
-	else if x == 'o':
-		return 2
-	else 
-		return 0
 
 class BigBoard:
 
@@ -123,15 +117,141 @@ class BigBoard:
 		self.small_boards_status = ([['-' for i in range(3)] for j in range(3)], [['-' for i in range(3)] for j in range(3)])
 
 	def heuristic(self,ply):
+		for k in range(2):
+		  for i in range(3):
+		 	  for j in range(3):
+				hashx[i][i][j][k] = 0
+		conj = 'o'
+		if conj == ply:
+			conj = 'x'
 		for i in range(2):
 			for j in range(3) :
-				for k in range(3) :
-					j = 1
+				for k in range(3) :		
 					for m in range(3) :
+						countp = 0
+						countj = 0 
 						for z in range(3) :
-							#j*3 + m, k*3 + z
-						 	hash1 += j*hvalue(self.big_boards_status[i][j*3 + m][k*3 + z])
-						 	j = j*3
+							if self.big_boards_status[i][j*3+m][k*3+z] == ply :
+								countp = countp + 1
+							elif self.big_boards_status[i][j*3+m][k*3+z] == conj :
+								countj = countj + 1
+						if countp == 3:
+							hashx[i][j][k] = hashx[i][j][k] + 100
+						elif countp == 2 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 10
+						elif countp == 0 and countj == 2:
+							hashx[i][j][k] = hashx[i][j][k] - 10 
+						elif countp == 0 and countj == 3:
+							hashx[i][j][k] = hashx[i][j][k] - 100
+						elif countp == 1 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 1
+						elif countp == 0 and countj == 1:
+							hashx[i][j][k] = hashx[i][j][k] -1
+
+				    for m in range(3) :
+						countp = 0
+						countj = 0 
+						for z in range(3) :
+							if self.big_boards_status[i][j*3+z][k*3+m] == ply :
+								countp = countp + 1
+							elif self.big_boards_status[i][j*3+z][k*3+m] == conj :
+								countj = countj + 1
+						if countp == 3:
+							hashx[i][j][k] = hashx[i][j][k] + 100
+						elif countp == 2 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 10
+						elif countp == 0 and countj == 2:
+							hashx[i][j][k] = hashx[i][j][k] - 10 
+						elif countp == 0 and countj == 3:
+							hashx[i][j][k] = hashx[i][j][k] - 100
+						elif countp == 1 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 1
+						elif countp == 0 and countj == 1:
+							hashx[i][j][k] = hashx[i][j][k] - 1 
+
+				    for m in range(3) :
+							if self.big_boards_status[i][j*3+m][k*3+m] == ply :
+								countp = countp + 1
+							elif self.big_boards_status[i][j*3+m][k*3+m] == conj :
+								countj = countj + 1
+						if countp == 3:
+							hashx[i][j][k] = hashx[i][j][k] + 100
+						elif countp == 2 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 10
+						elif countp == 0 and countj == 2:
+							hashx[i][j][k] = hashx[i][j][k] - 10 
+						elif countp == 0 and countj == 3:
+							hashx[i][j][k] = hashx[i][j][k] - 100
+						elif countp == 1 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 1
+						elif countp == 0 and countj == 1:
+							hashx[i][j][k] = hashx[i][j][k] - 1 
+
+				    for m in range(3) :
+							if self.big_boards_status[i][j*3+ 2 - m][k*3+ 2 - m] == ply :
+								countp = countp + 1
+							elif self.big_boards_status[i][j*3+ 2 - m][k*3+ 2 - m] == conj :
+								countj = countj + 1
+						if countp == 3:
+							hashx[i][j][k] = hashx[i][j][k] + 100
+						elif countp == 2 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 10
+						elif countp == 0 and countj == 2:
+							hashx[i][j][k] = hashx[i][j][k] - 10 
+						elif countp == 0 and countj == 3:
+							hashx[i][j][k] = hashx[i][j][k] - 100
+						elif countp == 1 and countj == 0:
+							hashx[i][j][k] = hashx[i][j][k] + 1
+						elif countp == 0 and countj == 1:
+							hashx[i][j][k] = hashx[i][j][k] -1
+
+		ohash = 0
+
+		for k in range(2):
+			for i in range(3):
+				sumx = 0
+				for j in range(3):
+					sumx  = sumx +  hashx[k][i][j]/800
+			    if sumx >= 0 and sumx <= 1 :
+				     ohash = ohash + sumx
+				elif sumx >=1 and sumx <= 2:
+					 ohash = ohash + 1 + (10 - 1)*sumx
+				else :
+					 ohash = ohash + 10 + (100 - 90)*sumx
+
+		for i in range(3):
+			sumx = 0
+			for j in range(3):
+				sumx  = sumx +  hashx[k][j][i]/800
+		    if sumx >= 0 and sumx <= 1 :
+			     ohash = ohash + sumx
+			elif sumx >=1 and sumx <= 2: 
+				 ohash = ohash + 1 + (10 - 1)*sumx
+			else :
+				 ohash = ohash + 10 + (100 - 90)*sumx
+		sumx = 0
+					 
+		for i in range(3):
+			sumx  = sumx +  hashx[k][i][i]/800
+			if sumx >= 0 and sumx <= 1 :
+			     ohash = ohash + sumx
+			elif sumx >=1 and sumx <= 2:
+				 ohash = ohash + 1 + (10 - 1)*sumx
+			else :
+				 ohash = ohash + 10 + (100 - 90)*sumx
+
+		for i in range(3):
+			sumx  = sumx +  hashx[k][2-i][2-i]/800
+			if sumx >= 0 and sumx <= 1 :
+			     ohash = ohash + sumx
+			elif sumx >=1 and sumx <= 2:
+				 ohash = ohash + 1 + (10 - 1)*sumx
+			else :
+				 ohash = ohash + 10 + (100 - 90)*sumx	
+
+		return ohash
+
+
 
 
 	def print_board(self):
