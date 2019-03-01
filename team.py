@@ -21,9 +21,11 @@ TIME = 24
 MAX_PTS = 86
 depth_limit=4;
 val1=[i for i in range(1000)]
+
+
 def minimax(depth, maximise, alpha, beta, old_move, ply, board):
 	if depth>depth_limit:
-		return val1[1]
+		return board.heuristic(ply)
 	possible_moves = board.find_valid_move_cells(old_move)
 	conj="o";
 	if conj==ply:
@@ -54,7 +56,7 @@ def minimax(depth, maximise, alpha, beta, old_move, ply, board):
 			board.small_boards_status[c[0]][c[1]/3][c[2]/3]=temp_small_boards_status		
 			if beta<=alpha:
 				return bestvalue					
-		
+
 class TimedOutExc(Exception):
 	pass
 
@@ -104,6 +106,14 @@ class Manual_Player:
 			board.small_boards_status[c[0]][c[1]/3][c[2]/3]=temp_small_boards_status		
 		return selected
 
+def hvalue(x):
+	if x == 'x':
+		return 1
+	else if x == 'o':
+		return 2
+	else 
+		return 0
+
 class BigBoard:
 
 	def __init__(self):
@@ -111,6 +121,18 @@ class BigBoard:
 		# small_boards_status shows which small_boards have been won/drawn and by which player
 		self.big_boards_status = ([['-' for i in range(9)] for j in range(9)], [['-' for i in range(9)] for j in range(9)])
 		self.small_boards_status = ([['-' for i in range(3)] for j in range(3)], [['-' for i in range(3)] for j in range(3)])
+
+	def heuristic(self,ply):
+		for i in range(2):
+			for j in range(3) :
+				for k in range(3) :
+					j = 1
+					for m in range(3) :
+						for z in range(3) :
+							#j*3 + m, k*3 + z
+						 	hash1 += j*hvalue(self.big_boards_status[i][j*3 + m][k*3 + z])
+						 	j = j*3
+
 
 	def print_board(self):
 		# for printing the state of the board
