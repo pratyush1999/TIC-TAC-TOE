@@ -19,7 +19,7 @@ import traceback
 
 TIME = 24
 MAX_PTS = 86
-depth_limit = 6
+depth_limit = 5
 
 
 class TimedOutExc(Exception):
@@ -64,7 +64,7 @@ class Manual_Player:
 
 
         if old_move==(-1,-1,-1):
-            self.heuristic(flag, selected, depth_limit, board)
+            self.heuristic(flag, selected, depth_limit-1, board)
             return selected
 
         for c in cells:
@@ -87,10 +87,11 @@ class Manual_Player:
 
             self.hashx[c[0]][c[1]/3][c[2]/3]=temp_heur
 
-        self.heuristic(flag, selected, depth_limit, board)
+       self.heuristic(flag, selected, depth_limit-1, board)
         return selected
 
     def heuristic(self, ply, old_move, depth, board):
+        ply="o"
         conj = 'o'
         if conj == ply:
             conj = 'x'
@@ -231,7 +232,6 @@ class Manual_Player:
                 ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
             else:
                 ohash=100*sumx/abs(sumx)
-
         return ohash
 
     def minimax(self, depth, maximise, alpha, beta, old_move, ply, board):
