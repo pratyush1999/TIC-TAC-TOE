@@ -23,48 +23,6 @@ depth_limit = 6
 val1 = [i for i in range(1000)]
 
 
-def minimax(depth, maximise, alpha, beta, old_move, ply, board):
-    conj = "o"
-    if conj == ply:
-        conj = "x"
-    if depth >= depth_limit:
-        return board.heuristic(conj, old_move)
-    possible_moves = board.find_valid_move_cells(old_move)
-
-    if maximise:
-        bestvalue = float("-inf")
-        for c in possible_moves:
-            temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
-            temp_small_boards_status = board.small_boards_status[c[0]
-                                                                 ][c[1]/3][c[2]/3]
-            board.update(old_move, c, conj)
-            val = minimax(depth+1, 0, alpha, beta, c, conj, board)
-            bestvalue = max(val, bestvalue)
-            alpha = max(alpha, bestvalue)
-            board.big_boards_status[c[0]][c[1]
-                                          ][c[2]] = temp_big_boards_status
-            board.small_boards_status[c[0]][c[1] /
-                                            3][c[2]/3] = temp_small_boards_status
-            if beta <= alpha:
-                return bestvalue
-    else:
-        bestvalue = float("inf")
-        for c in possible_moves:
-            temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
-            temp_small_boards_status = board.small_boards_status[c[0]
-                                                                 ][c[1]/3][c[2]/3]
-            board.update(old_move, c, conj)
-            val = minimax(depth+1, 1, alpha, beta, c, conj, board)
-            bestvalue = min(val, bestvalue)
-            beta = min(beta, bestvalue)
-            board.big_boards_status[c[0]][c[1]
-                                          ][c[2]] = temp_big_boards_status
-            board.small_boards_status[c[0]][c[1] /
-                                            3][c[2]/3] = temp_small_boards_status
-            if beta <= alpha:
-                return bestvalue
-
-
 class TimedOutExc(Exception):
     pass
 
@@ -87,68 +45,68 @@ class Random_Player():
 
 class Manual_Player:
     def __init__(self):
-        pass
+        self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(3)]
+     
+
 
     def move(self, board, old_move, flag):
         # print 'Enter your move: <format:board row column> (you\'re playing with', flag + ")"
         # mvp = raw_input()
         # mvp = mvp.split()
+       
         cells = board.find_valid_move_cells(old_move)
-        if flag == "x":
-            maximise = 0
-            bestval = float("-inf")
-        else:
-            maximise = 1
-            bestval = float("inf")
+      
+        bestval = float("-inf")
+      
+        selected=cells[random.randrange(len(cells))]
+        
+        if old_move==(-1,-1,-1):
+            self.heuristic(flag, selected, depth_limit, board)
+            return selected
+
         for c in cells:
             temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
             temp_small_boards_status = board.small_boards_status[c[0]
                                                                  ][c[1]/3][c[2]/3]
+
             board.update(old_move, c, flag)
-            if flag == "x":
-                d = minimax(1, maximise, float("-inf"),
+            temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
+            self.heuristic(flag, old_move, 0, board)
+            d=float("-inf")
+            if flag=="x":
+                d = self.minimax(1, 0, float("-inf"),
                             float("inf"), c, "o", board)
-                if d > bestval:
-                    bestval = d
-                    selected = c
-            if flag == "o":
-                d = minimax(1, maximise, float("-inf"),
+            else:
+                 d = self.minimax(1, 0, float("-inf"),
                             float("inf"), c, "x", board)
-                if d < bestval:
-                    bestval = d
-                    selected = c
+            if d > bestval:
+                bestval = d
+                selected = c
             board.big_boards_status[c[0]][c[1]
                                           ][c[2]] = temp_big_boards_status
             board.small_boards_status[c[0]][c[1] /
                                             3][c[2]/3] = temp_small_boards_status
+
+            self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+
+        self.heuristic(flag, selected, depth_limit, board)
         return selected
 
-
-class BigBoard:
-
-    def __init__(self):
-        # big_boards_status is the game board
-        # small_boards_status shows which small_boards have been won/drawn and by which player
-        self.big_boards_status = (
-            [['-' for i in range(9)] for j in range(9)], [['-' for i in range(9)] for j in range(9)])
-        self.small_boards_status = (
-            [['-' for i in range(3)] for j in range(3)], [['-' for i in range(3)] for j in range(3)])
-
-        self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(3)]
-    def heuristic(self, ply, old_move):
+    def heuristic(self, ply, old_move, depth, board):
         conj = 'o'
         if conj == ply:
             conj = 'x'
         i=old_move[0]
         j=old_move[1]/3
         k=old_move[2]/3
+        self.hashx[i][j][k]=0
         for m in range(3):
             countp = 0
             countj = 0
             for z in range(3):
-                if self.big_boards_status[i][j*3+m][k*3+z] == ply:
+                if board.big_boards_status[i][j*3+m][k*3+z] == ply:
                     countp = countp + 1
-                elif self.big_boards_status[i][j*3+m][k*3+z] == conj:
+                elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
                     countj = countj + 1
             if countp == 3:
                 self.hashx[i][j][k] = self.hashx[i][j][k] + 100
@@ -167,9 +125,9 @@ class BigBoard:
             countp = 0
             countj = 0
             for z in range(3):
-                if self.big_boards_status[i][j*3+z][k*3+m] == ply:
+                if board.big_boards_status[i][j*3+z][k*3+m] == ply:
                     countp = countp + 1
-                elif self.big_boards_status[i][j*3+z][k*3+m] == conj:
+                elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
                     countj = countj + 1
             if countp == 3:
                 self.hashx[i][j][k] = self.hashx[i][j][k] + 100
@@ -185,9 +143,9 @@ class BigBoard:
                 self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
         for m in range(3):
-            if self.big_boards_status[i][j*3+m][k*3+m] == ply:
+            if board.big_boards_status[i][j*3+m][k*3+m] == ply:
                 countp = countp + 1
-            elif self.big_boards_status[i][j*3+m][k*3+m] == conj:
+            elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
                 countj = countj + 1
         if countp == 3:
             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
@@ -203,9 +161,9 @@ class BigBoard:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
         for m in range(3):
-            if self.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
+            if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
                 countp = countp + 1
-            elif self.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
+            elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
                 countj = countj + 1
         if countp == 3:
             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
@@ -221,7 +179,9 @@ class BigBoard:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
         ohash = 0
-
+        if depth<depth_limit:
+            return ohash
+            
         for k in range(2):
             for i in range(3):
                 sumx = 0
@@ -230,9 +190,9 @@ class BigBoard:
                 if abs(sumx) >= 0 and abs(sumx) <= 1:
                     ohash = ohash + sumx
                 elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                    ohash = ohash + 1 + (10 - 1)*sumx
+                    ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
                 else:
-                    ohash = ohash + 10 + (100 - 90)*sumx
+                    ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
 
             for i in range(3):
                 sumx = 0
@@ -241,9 +201,9 @@ class BigBoard:
                 if abs(sumx) >= 0 and abs(sumx) <= 1:
                     ohash = ohash + sumx
                 elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                    ohash = ohash + 1 + (10 - 1)*sumx
+                    ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
                 else:
-                    ohash = ohash + 10 + (100 - 90)*sumx
+                    ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
             sumx = 0
 
             for i in range(3):
@@ -251,9 +211,9 @@ class BigBoard:
             if abs(sumx) >= 0 and abs(sumx) <= 1:
                 ohash = ohash + sumx
             elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                ohash = ohash + 1 + (10 - 1)*sumx
+                ohash = ohash + 1*sumx/abs(sumx) + (10 )*sumx
             else:
-                ohash = ohash + 10 + (100 - 90)*sumx
+                ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
 
             sumx = 0
             for i in range(3):
@@ -261,19 +221,75 @@ class BigBoard:
             if abs(sumx) >= 0 and abs(sumx) <= 1:
                 ohash = ohash + sumx
             elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                ohash = ohash + 1 + (10 - 1)*sumx
+                ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
             else:
-                ohash = ohash + 10 + (100 - 90)*sumx
+                ohash = ohash + 10*sumx/abs(sumx)+ (100)*sumx
 
         return ohash
-    # def initialise_Zobrist(self):
-    #     self.dict = {}
-    # 	self.hashx=0
-    # 	for k in range(2):
-    #         for i in range(9):
-    #             for j in range(9):
-                	
 
+    def minimax(self, depth, maximise, alpha, beta, old_move, ply, board):
+        conj = "o"
+        if conj == ply:
+            conj = "x"
+        if depth >= depth_limit:
+            return self.heuristic(conj, old_move, depth, board)
+        possible_moves = board.find_valid_move_cells(old_move)
+
+        if maximise:
+            bestvalue = float("-inf")
+            for c in possible_moves:
+                temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
+                temp_small_boards_status = board.small_boards_status[c[0]][c[1]/3][c[2]/3]
+                board.update(old_move, c, conj)
+               
+                temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
+                self.heuristic(conj, old_move, depth, board)
+                val = self.minimax(depth+1, 0, alpha, beta, c, conj, board)
+                self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+
+                bestvalue = max(val, bestvalue)
+                alpha = max(alpha, bestvalue)
+                board.big_boards_status[c[0]][c[1]
+                                              ][c[2]] = temp_big_boards_status
+                board.small_boards_status[c[0]][c[1] /
+                                                3][c[2]/3] = temp_small_boards_status
+                if beta <= alpha:
+                    return bestvalue
+        else:
+            bestvalue = float("inf")
+            for c in possible_moves:
+                temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
+                temp_small_boards_status = board.small_boards_status[c[0]
+                                                                     ][c[1]/3][c[2]/3]
+                board.update(old_move, c, conj)
+
+                temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
+                self.heuristic(conj, old_move, depth, board)
+                val = self.minimax(depth+1, 1, alpha, beta, c, conj, board)
+                self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+
+                bestvalue = min(val, bestvalue)
+                beta = min(beta, bestvalue)
+                board.big_boards_status[c[0]][c[1]
+                                              ][c[2]] = temp_big_boards_status
+                board.small_boards_status[c[0]][c[1] /
+                                                3][c[2]/3] = temp_small_boards_status
+                if beta <= alpha:
+                    return bestvalue
+
+
+class BigBoard:
+
+    def __init__(self):
+        # big_boards_status is the game board
+        # small_boards_status shows which small_boards have been won/drawn and by which player
+        self.big_boards_status = (
+            [['-' for i in range(9)] for j in range(9)], [['-' for i in range(9)] for j in range(9)])
+        self.small_boards_status = (
+            [['-' for i in range(3)] for j in range(3)], [['-' for i in range(3)] for j in range(3)])
+
+ 
+        	
     def print_board(self):
         # for printing the state of the board
         print '================BigBoard State================'
@@ -414,46 +430,7 @@ class BigBoard:
 
         return 'SUCCESSFUL', False
 
-# def update_rev(self, old_move, new_move, ply):
-#            #updating the game board and small_board status as per the move that has been passed in the arguements
-#            if(self.check_valid_move(old_move, new_move)) == False:
-#                return 'UNSUCCESSFUL', False
 
-#            self.big_boards_status[new_move[0]][new_move[1]][new_move[2]] = '-'
-
-#            x = new_move[1]/3
-#            y = new_move[2]/3
-#            k = new_move[0]
-#            fl = 0
-
-#            #checking if a small_board has been won or drawn or not after the current move
-#            bs = self.big_boards_status[k]
-#            for i in range(3):
-#                #checking for horizontal pattern(i'th row)
-#                if (!((bs[3*x+i][3*y] == bs[3*x+i][3*y+1] == bs[3*x+i][3*y+2]) and (bs[3*x+i][3*y] == ply))and self.small_boards_status[k][x][y] == ply):
-#                   self.small_boards_status[k][x][y] = '-'
-#                   return 'SUCCESSFUL', True
-#                #checking for vertical pattern(i'th column)
-#                if (!((bs[3*x][3*y+i] == bs[3*x+1][3*y+i] == bs[3*x+2][3*y+i]) and (bs[3*x][3*y+i] == ply))and self.small_boards_status[k][x][y] == ply):
-#                   self.small_boards_status[k][x][y] = '-'
-#                   return 'SUCCESSFUL', True
-#            #checking for diagonal patterns
-#            #diagonal 1
-#            if (!((bs[3*x][3*y] == bs[3*x+1][3*y+1] == bs[3*x+2][3*y+2]) and (bs[3*x][3*y] == ply))and self.small_boards_status[k][x][y] == ply):
-#                self.small_boards_status[k][x][y] = '-'
-#                return 'SUCCESSFUL', True
-#            #diagonal 2
-#            if (!((bs[3*x][3*y+2] == bs[3*x+1][3*y+1] == bs[3*x+2][3*y]) and (bs[3*x][3*y+2] == ply))and self.small_boards_status[k][x][y] = ply):
-#                self.small_boards_status[k][x][y] = '-'
-#                return 'SUCCESSFUL', True
-#            #checking if a small_board has any more cells left or has it been drawn
-#            for i in range(3):
-#                for j in range(3):
-#                   if bs[3*x+i][3*y+j] =='-' and 3*x+i!=new_move[1] and 3*y+j!=new_move[2]:
-#                     return 'SUCCESSFUL', False
-#            self.small_boards_status[k][x][y] = '-'
-
-#            return 'SUCCESSFUL', False
 
 
 def player_turn(game_board, old_move, obj, ply, opp, flg):
