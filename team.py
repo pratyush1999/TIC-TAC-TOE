@@ -19,8 +19,7 @@ import traceback
 
 TIME = 24
 MAX_PTS = 86
-depth_limit = 6
-val1 = [i for i in range(1000)]
+depth_limit = 5
 
 
 class TimedOutExc(Exception):
@@ -46,7 +45,6 @@ class Random_Player():
 class Manual_Player:
     def __init__(self):
         self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(3)]
-     
 
 
     def move(self, board, old_move, flag):
@@ -59,7 +57,12 @@ class Manual_Player:
         bestval = float("-inf")
       
         selected=cells[random.randrange(len(cells))]
-        
+
+        conj = 'o'
+        if conj == flag:
+            conj = 'x'
+
+
         if old_move==(-1,-1,-1):
             self.heuristic(flag, selected, depth_limit, board)
             return selected
@@ -68,17 +71,12 @@ class Manual_Player:
             temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
             temp_small_boards_status = board.small_boards_status[c[0]
                                                                  ][c[1]/3][c[2]/3]
-
+     
             board.update(old_move, c, flag)
-            temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
-            self.heuristic(flag, old_move, 0, board)
-            d=float("-inf")
-            if flag=="x":
-                d = self.minimax(1, 0, float("-inf"),
-                            float("inf"), c, "o", board)
-            else:
-                 d = self.minimax(1, 0, float("-inf"),
-                            float("inf"), c, "x", board)
+            temp_heur=self.hashx[c[0]][c[1]/3][c[2]/3]
+            self.heuristic(flag, c, 0, board)
+            d = self.minimax(1, 0, float("-inf"),
+                            float("inf"), c, conj, board)
             if d > bestval:
                 bestval = d
                 selected = c
@@ -87,7 +85,7 @@ class Manual_Player:
             board.small_boards_status[c[0]][c[1] /
                                             3][c[2]/3] = temp_small_boards_status
 
-            self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+            self.hashx[c[0]][c[1]/3][c[2]/3]=temp_heur
 
         self.heuristic(flag, selected, depth_limit, board)
         return selected
@@ -99,6 +97,7 @@ class Manual_Player:
         i=old_move[0]
         j=old_move[1]/3
         k=old_move[2]/3
+        temp=self.hashx[i][j][k]
         self.hashx[i][j][k]=0
         for m in range(3):
             countp = 0
@@ -181,49 +180,57 @@ class Manual_Player:
         ohash = 0
         if depth<depth_limit:
             return ohash
-            
+        self.hashx[i][j][k]=temp    
         for k in range(2):
             for i in range(3):
                 sumx = 0
                 for j in range(3):
                     sumx = sumx + self.hashx[k][i][j]/800
-                if abs(sumx) >= 0 and abs(sumx) <= 1:
+                if abs(sumx) >= 0 and abs(sumx) < 1:
                     ohash = ohash + sumx
-                elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                    ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
+                elif abs(sumx) >= 1 and abs(sumx) < 2:
+                    ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+                elif abs(sumx) >= 2 and abs(sumx) < 3:
+                    ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
                 else:
-                    ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
+                    ohash=100*sumx/abs(sumx)
 
             for i in range(3):
                 sumx = 0
                 for j in range(3):
                     sumx = sumx + self.hashx[k][j][i]/800
-                if abs(sumx) >= 0 and abs(sumx) <= 1:
+                if abs(sumx) >= 0 and abs(sumx) < 1:
                     ohash = ohash + sumx
-                elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                    ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
+                elif abs(sumx) >= 1 and abs(sumx) < 2:
+                    ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+                elif abs(sumx) >= 2 and abs(sumx) < 3:
+                    ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
                 else:
-                    ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
+                    ohash=100*sumx/abs(sumx)
             sumx = 0
 
             for i in range(3):
                 sumx = sumx + self.hashx[k][i][i]/800
-            if abs(sumx) >= 0 and abs(sumx) <= 1:
+            if abs(sumx) >= 0 and abs(sumx) < 1:
                 ohash = ohash + sumx
-            elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                ohash = ohash + 1*sumx/abs(sumx) + (10 )*sumx
+            elif abs(sumx) >= 1 and abs(sumx) < 2:
+                ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+            elif abs(sumx) >= 2 and abs(sumx) < 3:
+                ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
             else:
-                ohash = ohash + 10*sumx/abs(sumx) + (100)*sumx
+                ohash=100*sumx/abs(sumx)
 
             sumx = 0
             for i in range(3):
                 sumx = sumx + self.hashx[k][2 - i][2 - i]/800
-            if abs(sumx) >= 0 and abs(sumx) <= 1:
+            if abs(sumx) >= 0 and abs(sumx) < 1:
                 ohash = ohash + sumx
-            elif abs(sumx) >= 1 and abs(sumx) <= 2:
-                ohash = ohash + 1*sumx/abs(sumx) + (10)*sumx
+            elif abs(sumx) >= 1 and abs(sumx) < 2:
+                ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+            elif abs(sumx) >= 2 and abs(sumx) < 3:
+                ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
             else:
-                ohash = ohash + 10*sumx/abs(sumx)+ (100)*sumx
+                ohash=100*sumx/abs(sumx)
 
         return ohash
 
@@ -232,7 +239,8 @@ class Manual_Player:
         if conj == ply:
             conj = "x"
         if depth >= depth_limit:
-            return self.heuristic(conj, old_move, depth, board)
+            d=self.heuristic(ply, old_move, depth, board)
+            return d
         possible_moves = board.find_valid_move_cells(old_move)
 
         if maximise:
@@ -240,12 +248,12 @@ class Manual_Player:
             for c in possible_moves:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]][c[1]/3][c[2]/3]
-                board.update(old_move, c, conj)
+                board.update(old_move, c, ply)
                
-                temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
-                self.heuristic(conj, old_move, depth, board)
+                temp_heur=self.hashx[c[0]][c[1]/3][c[2]/3]
+                self.heuristic(ply, c, depth, board)
                 val = self.minimax(depth+1, 0, alpha, beta, c, conj, board)
-                self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+                self.hashx[c[0]][c[1]/3][c[2]/3]=temp_heur
 
                 bestvalue = max(val, bestvalue)
                 alpha = max(alpha, bestvalue)
@@ -255,18 +263,19 @@ class Manual_Player:
                                                 3][c[2]/3] = temp_small_boards_status
                 if beta <= alpha:
                     return bestvalue
+            return bestvalue
         else:
             bestvalue = float("inf")
             for c in possible_moves:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]
                                                                      ][c[1]/3][c[2]/3]
-                board.update(old_move, c, conj)
+                board.update(old_move, c, ply)
 
-                temp_heur=self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]
-                self.heuristic(conj, old_move, depth, board)
+                temp_heur=self.hashx[c[0]][c[1]/3][c[2]/3]
+                self.heuristic(ply, c, depth, board)
                 val = self.minimax(depth+1, 1, alpha, beta, c, conj, board)
-                self.hashx[old_move[0]][old_move[1]/3][old_move[2]/3]=temp_heur
+                self.hashx[c[0]][c[1]/3][c[2]/3]=temp_heur
 
                 bestvalue = min(val, bestvalue)
                 beta = min(beta, bestvalue)
@@ -276,6 +285,7 @@ class Manual_Player:
                                                 3][c[2]/3] = temp_small_boards_status
                 if beta <= alpha:
                     return bestvalue
+            return bestvalue
 
 
 class BigBoard:
