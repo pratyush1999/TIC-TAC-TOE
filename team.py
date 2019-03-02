@@ -19,7 +19,7 @@ import traceback
 
 TIME = 24
 MAX_PTS = 86
-depth_limit = 6
+depth_limit = 4
 
 
 class TimedOutExc(Exception):
@@ -45,7 +45,65 @@ class Random_Player():
 class Manual_Player:
     def __init__(self):
         self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(3)]
+        self.ply = "x"
+        self.conj = "o"
 
+    def chck(self,board,old_move,ply):
+        conj = self.conj
+        ply = self.ply
+        i=old_move[0]
+        j=old_move[1]/3
+        k=old_move[2]/3
+        for m in range(3):
+            countp = 0
+            countj = 0
+            for z in range(3):
+                if board.big_boards_status[i][j*3+m][k*3+z] == ply:
+                    countp = countp + 1
+                elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
+                    countj = countj + 1
+            if countp == 3 :
+                return 1000
+            elif countp == 1 and countj == 2:
+                return 500    
+        for m in range(3):
+            countp = 0
+            countj = 0
+            for z in range(3):
+                if board.big_boards_status[i][j*3+z][k*3+m] == ply:
+                    countp = countp + 1
+                elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
+                    countj = countj + 1
+            if countp == 3 :
+                return 1000
+            elif countp == 1 and countj == 2:
+                return 500  
+        
+        countp = 0
+        countj = 0
+        for m in range(3):
+            if board.big_boards_status[i][j*3+m][k*3+m] == ply:
+                countp = countp + 1
+            elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
+                countj = countj + 1
+        if countp == 3 :
+                return 1000
+        elif countp == 1 and countj == 2:
+                return 500  
+
+        countp = 0
+        countj = 0
+        for m in range(3):
+            if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
+                countp = countp + 1
+            elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
+                countj = countj + 1
+        if countp == 3 :
+                return 1000
+        elif countp == 1 and countj == 2:
+                return 500  
+
+        return 0
 
     def move(self, board, old_move, flag):
         # print 'Enter your move: <format:board row column> (you\'re playing with', flag + ")"
@@ -58,9 +116,9 @@ class Manual_Player:
       
         selected=cells[random.randrange(len(cells))]
 
-        conj = 'o'
-        if conj == flag:
-            conj = 'x'
+        if self.conj == flag:
+            self.conj = "x"
+            self.ply = "o"
 
 
         if old_move==(-1,-1,-1):
@@ -76,7 +134,8 @@ class Manual_Player:
             temp_heur=self.hashx[c[0]][c[1]/3][c[2]/3]
             self.heuristic(flag, c, 0, board)
             d = self.minimax(1, 0, float("-inf"),
-                            float("inf"), c, conj, board)
+                            float("inf"), c, self.conj, board)
+            d = d + self.chck(board,c,flag)
             if d > bestval:
                 bestval = d
                 selected = c
@@ -91,9 +150,8 @@ class Manual_Player:
         return selected
 
     def heuristic(self, ply, old_move, depth, board):
-        conj = 'o'
-        if conj == ply:
-            conj = 'x'
+        conj = self.conj
+        ply = self.ply
         i=old_move[0]
         j=old_move[1]/3
         k=old_move[2]/3
@@ -140,7 +198,8 @@ class Manual_Player:
                 self.hashx[i][j][k] = self.hashx[i][j][k] + 1
             elif countp == 0 and countj == 1:
                 self.hashx[i][j][k] = self.hashx[i][j][k] - 1
-
+        countp = 0
+        countj = 0
         for m in range(3):
             if board.big_boards_status[i][j*3+m][k*3+m] == ply:
                 countp = countp + 1
@@ -158,7 +217,8 @@ class Manual_Player:
             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
         elif countp == 0 and countj == 1:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
-
+        countp = 0
+        countj = 0
         for m in range(3):
             if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
                 countp = countp + 1
@@ -169,13 +229,13 @@ class Manual_Player:
         elif countp == 2 and countj == 0:
             self.hashx[i][j][k] = self.hashx[i][j][k] + 10
         elif countp == 0 and countj == 2:
-            self.hashx[i][j][k] = self.hashx[i][j][k] - 10
+            self.hashx[i][j][k] = self.hashx[i][j][k] - 10/5
         elif countp == 0 and countj == 3:
-            self.hashx[i][j][k] = self.hashx[i][j][k] - 100
+            self.hashx[i][j][k] = self.hashx[i][j][k] - 100/5
         elif countp == 1 and countj == 0:
             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
         elif countp == 0 and countj == 1:
-            self.hashx[i][j][k] = self.hashx[i][j][k] - 1
+            self.hashx[i][j][k] = self.hashx[i][j][k] - 1/5
 
         ohash = 0
         if depth<depth_limit:
@@ -625,8 +685,8 @@ if __name__ == '__main__':
         obj2 = Random_Player()
 
     elif option == '2':
-        obj1 = Random_Player()
-        obj2 = Manual_Player()
+        obj2 = Random_Player()
+        obj1 = Manual_Player()
     elif option == '3':
         obj1 = Manual_Player()
         obj2 = Manual_Player()

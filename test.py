@@ -87,7 +87,7 @@ class Manual_Player:
 
             self.hashx[c[0]][c[1]/3][c[2]/3]=temp_heur
 
-       self.heuristic(flag, selected, depth_limit-1, board)
+        self.heuristic(flag, selected, depth_limit-1, board)
         return selected
 
     def heuristic(self, ply, old_move, depth, board):
@@ -143,6 +143,8 @@ class Manual_Player:
                 self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
         for m in range(3):
+            countp = 0
+            countj = 0
             if board.big_boards_status[i][j*3+m][k*3+m] == ply:
                 countp = countp + 1
             elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
@@ -161,6 +163,8 @@ class Manual_Player:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
         for m in range(3):
+            countp = 0
+            countj = 0
             if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
                 countp = countp + 1
             elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
@@ -502,7 +506,7 @@ def player_turn(game_board, old_move, obj, ply, opp, flg):
 
 def gameplay(obj1, obj2):  # game simulator
 
-    game_board = BigBoard()
+    board = BigBoard()
     fl1 = 'x'
     fl2 = 'o'
     old_move = (-1, -1, -1)
@@ -511,81 +515,105 @@ def gameplay(obj1, obj2):  # game simulator
     pts1 = 0
     pts2 = 0
 
-    game_board.print_board()
-    signal.signal(signal.SIGALRM, handler)
-    while(1):
-        # player 1 turn
-        p1_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
-            game_board, old_move, obj1, "P1", "P2", fl1)
+    board.big_boards_status[0][0][2]="x"
+    board.big_boards_status[0][0][3]="o"
+    board.big_boards_status[0][0][5]="o"
+    board.big_boards_status[1][0][1]="x"
+    board.big_boards_status[1][0][7]="x"
 
-        if to_break:
-            break
+    board.big_boards_status[0][1][6]="o"
 
-        old_move = p1_move
-        game_board.print_board()
+    board.big_boards_status[0][2][7]="x"
+    board.big_boards_status[1][2][1]="x"
+    board.big_boards_status[1][2][2]="x"
+    board.big_boards_status[1][2][6]="x"
 
-        if small_board_won:
-            p1_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
-                game_board, old_move, obj1, "P1", "P2", fl1)
+    board.big_boards_status[0][5][2]="x"
 
-            if to_break:
-                break
+    board.big_boards_status[0][6][0]="o"
+    board.big_boards_status[0][6][3]="o"
+    board.big_boards_status[0][6][5]="o"
+    board.big_boards_status[0][6][6]="o"
+    board.big_boards_status[0][6][8]="o"
 
-            old_move = p1_move
-            game_board.print_board()
+    board.big_boards_status[1][8][7]="x"
+    obj2.heuristic("o", selected, depth_limit-1, board)
 
-        # do the same thing for player 2
-        p2_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
-            game_board, old_move, obj2, "P2", "P1", fl2)
+    board.print_board()
+    # signal.signal(signal.SIGALRM, handler)
+    # while(1):
+    #     # player 1 turn
+    #     p1_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
+    #         game_board, old_move, obj1, "P1", "P2", fl1)
 
-        if to_break:
-            break
+    #     if to_break:
+    #         break
 
-        game_board.print_board()
-        old_move = p2_move
+    #     old_move = p1_move
+    #     game_board.print_board()
 
-        if small_board_won:
-            p2_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
-                game_board, old_move, obj2, "P2", "P1", fl2)
+    #     if small_board_won:
+    #         p1_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
+    #             game_board, old_move, obj1, "P1", "P2", fl1)
 
-            if to_break:
-                break
+    #         if to_break:
+    #             break
 
-            old_move = p2_move
-            game_board.print_board()
+    #         old_move = p1_move
+    #         game_board.print_board()
 
-    game_board.print_board()
+    #     # do the same thing for player 2
+    #     p2_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
+    #         game_board, old_move, obj2, "P2", "P1", fl2)
 
-    print "Winner:", WINNER
-    print "Message", MESSAGE
+    #     if to_break:
+    #         break
 
-    x = 0
-    d = 0
-    o = 0
-    for k in range(2):
-        for i in range(3):
-            for j in range(3):
-                if game_board.small_boards_status[k][i][j] == 'x':
-                    x += 1
-                if game_board.small_boards_status[k][i][j] == 'o':
-                    o += 1
-                if game_board.small_boards_status[k][i][j] == 'd':
-                    d += 1
-    print 'x:', x, ' o:', o, ' d:', d
+    #     game_board.print_board()
+    #     old_move = p2_move
 
-    if MESSAGE == 'DRAW':
-        for k in range(2):
-            for i in range(3):
-                for j in range(3):
-                    val = 6
-                    if is_corner(i, j):
-                        val = 4
-                    elif is_centre(i, j):
-                        val = 3
-                    if game_board.small_boards_status[k][i][j] == 'x':
-                        pts1 += val
-                    if game_board.small_boards_status[k][i][j] == 'o':
-                        pts2 += val
+    #     if small_board_won:
+    #         p2_move, WINNER, MESSAGE, pts1, pts2, to_break, small_board_won = player_turn(
+    #             game_board, old_move, obj2, "P2", "P1", fl2)
+
+    #         if to_break:
+    #             break
+
+    #         old_move = p2_move
+    #         game_board.print_board()
+
+    # game_board.print_board()
+
+    # print "Winner:", WINNER
+    # print "Message", MESSAGE
+
+    # x = 0
+    # d = 0
+    # o = 0
+    # for k in range(2):
+    #     for i in range(3):
+    #         for j in range(3):
+    #             if game_board.small_boards_status[k][i][j] == 'x':
+    #                 x += 1
+    #             if game_board.small_boards_status[k][i][j] == 'o':
+    #                 o += 1
+    #             if game_board.small_boards_status[k][i][j] == 'd':
+    #                 d += 1
+    # print 'x:', x, ' o:', o, ' d:', d
+
+    # if MESSAGE == 'DRAW':
+    #     for k in range(2):
+    #         for i in range(3):
+    #             for j in range(3):
+    #                 val = 6
+    #                 if is_corner(i, j):
+    #                     val = 4
+    #                 elif is_centre(i, j):
+    #                     val = 3
+    #                 if game_board.small_boards_status[k][i][j] == 'x':
+    #                     pts1 += val
+    #                 if game_board.small_boards_status[k][i][j] == 'o':
+    #                     pts2 += val
 
     return (pts1, pts2)
 
