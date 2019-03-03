@@ -55,7 +55,7 @@ class Manual_Player:
         self.conj_blk_won=0
         self.last_blk_won=0
         self.level=2
-        self.depth_limit=1
+        self.depth_limit=9
     def init_zobrist(self, board):
     	self.dict={}
     	for k in range(2):
@@ -103,10 +103,9 @@ class Manual_Player:
             return selected
         temp_ply=self.ply_blk_won
         temp_conj=self.conj_blk_won
-        self.depth_limit+=1
         while time.time()-self.starttime < TIME and self.level<=self.depth_limit:
             self.level+=1
-            self.init_zobrist(board)
+            bestval = -self.infi
             for c in cells:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]
@@ -163,6 +162,7 @@ class Manual_Player:
         return selected
 
     def new_heuristic(self, ply, move, board):
+        self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(2)]
     	boardstate=board.find_terminal_state()
     	if boardstate[1]=='WON':
     		if ply==self.ply:
@@ -238,7 +238,7 @@ class Manual_Player:
                     countq+=1
             if countp==0 or countq==0:
                 ohash+=sumx            
-        if ohash>0:
+        if ohash!=0:
             return ohash
 
         for i in range(2):
