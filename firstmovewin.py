@@ -1,13 +1,8 @@
 '''
-
 Naming convention followed across the simulator is:
-
 - BigBoard = big_boards[0] + big_boards[1]
-
 - big_board[i] = small_boards[0] + small_boards[1] + small_boards[2] + .... + small_boards[7] + small_boards[8]
-
 - small_board[i] = cell[0] + cell[1] + cell[2] + .... + cell[7] + cell[8]
-
 '''
 
 import sys
@@ -16,7 +11,7 @@ import signal
 import time
 import copy
 import traceback
-from team72v3 import Team72v3
+from prajwal import Bot
 TIME = 24
 MAX_PTS = 86
 
@@ -51,11 +46,10 @@ class Manual_Player:
         self.block_hash=[[[0 for k in range(3)] for j in range(3)] for i in range(2)]
         self.block_zob=[(2**i)for i in range(18)]
         self.infi=1000000000
+        self.level=2
         self.ply_blk_won=0
         self.conj_blk_won=0
-        self.last_blk_won=0
-        self.level=2
-        self.depth_limit=9
+        self.ply_last_blk_won=0
     def init_zobrist(self, board):
     	self.dict={}
     	for k in range(2):
@@ -72,7 +66,62 @@ class Manual_Player:
 	    					c+=1
 	            
 	    						
+    # def chck(self,board,old_move,ply):
+    #     conj = self.conj
+    #     ply = self.ply
+    #     i=old_move[0]
+    #     j=old_move[1]/3
+    #     k=old_move[2]/3
+    #     for m in range(3):
+    #         countp = 0
+    #         countj = 0
+    #         for z in range(3):
+    #             if board.big_boards_status[i][j*3+m][k*3+z] == ply:
+    #                 countp = countp + 1
+    #             elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
+    #                 countj = countj + 1
+    #         if countp == 3 :
+    #             return 1000
+    #         elif countp == 1 and countj == 2:
+    #             return 500    
+    #     for m in range(3):
+    #         countp = 0
+    #         countj = 0
+    #         for z in range(3):
+    #             if board.big_boards_status[i][j*3+z][k*3+m] == ply:
+    #                 countp = countp + 1
+    #             elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
+    #                 countj = countj + 1
+    #         if countp == 3 :
+    #             return 1000
+    #         elif countp == 1 and countj == 2:
+    #             return 500  
+        
+    #     countp = 0
+    #     countj = 0
+    #     for m in range(3):
+    #         if board.big_boards_status[i][j*3+m][k*3+m] == ply:
+    #             countp = countp + 1
+    #         elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
+    #             countj = countj + 1
+    #     if countp == 3 :
+    #             return 1000
+    #     elif countp == 1 and countj == 2:
+    #             return 500  
 
+    #     countp = 0
+    #     countj = 0
+    #     for m in range(3):
+    #         if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
+    #             countp = countp + 1
+    #         elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
+    #             countj = countj + 1
+    #     if countp == 3 :
+    #             return 1000
+    #     elif countp == 1 and countj == 2:
+    #             return 500  
+
+    #     return 0
 
     def update_zubrist_block(self, move, ply):
     	if ply==self.ply:
@@ -87,60 +136,33 @@ class Manual_Player:
         if self.conj == flag:
            self.conj = "x"
            self.ply = "o"
-                    
-        conj_flag=self.conj
+
+        self.ply_blk_won=0
+        self.conj_blk_won=0
+        if self.ply_last_blk_won:
+            self.ply_blk_won^=1
+
         cells = board.find_valid_move_cells(old_move)
-      	self.starttime=time.time()-4
+      	self.starttime=time.time()
         bestval = -self.infi
       	self.init_zobrist(board)
         selected=cells[random.randrange(len(cells))]
-        self.ply_blk_won=0
-        self.conj_blk_won=0
-        if self.last_blk_won:
-            self.ply_blk_won=1
-        self.level=4
+        self.level=5
+       
         if old_move==(-1,-1,-1):
             return selected
-        temp_ply=self.ply_blk_won
-        temp_conj=self.conj_blk_won
-        while time.time()-self.starttime < TIME and self.level<=self.depth_limit:
-            self.level+=1
-            bestval = -self.infi
+
+        while self.level<6:
+            self.init_zobrist(board)    
             for c in cells:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]
                                                                      ][c[1]/3][c[2]/3]
-
                 self.update_zubrist_block(c, flag)
          
-                x, won=board.update(old_move, c, flag)
-                if won:
-                    if self.ply==flag:
-                        self.ply_blk_won^=1
-                    else:
-                       self.conj_blk_won^=1
-                else:
-                    if self.ply==flag:
-                        self.ply_blk_won=0
-                    else:
-                       self.conj_blk_won=0
-                d=-self.infi
-                if flag==self.ply:
-                    if self.ply_blk_won and won:
-                        d = self.minimax(1, 0, -self.infi,
-                                self.infi, c, flag, board)
-                    else:
-                        d = self.minimax(1, 0, -self.infi,
-                                self.infi, c, conj_flag, board)
-                else:
-                    if self.conj_blk_won and won:
-                        d = self.minimax(1, 0, -self.infi,
-                                self.infi, c, conj_flag, board)
-                    else:
-                        d = self.minimax(1, 0, -self.infi,
-                                self.infi, c, flag, board)
-                self.ply_blk_won=temp_ply
-                self.conj_blk_won=temp_conj                    
+                board.update(old_move, c, flag)
+                d = self.minimax(1, 0, -self.infi,
+                                self.infi, c, self.conj, board)
                 self.update_zubrist_block(c, flag)
                 if d > bestval:
                     bestval = d
@@ -149,20 +171,21 @@ class Manual_Player:
                                               ][c[2]] = temp_big_boards_status
                 board.small_boards_status[c[0]][c[1] /
                                                 3][c[2]/3] = temp_small_boards_status
+            self.level+=1
+
         c=selected
         temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
         temp_small_boards_status = board.small_boards_status[c[0]][c[1]/3][c[2]/3]
-        x, won=board.update(old_move, c, flag)
+        val, won=board.update(old_move, selected, flag)
         board.big_boards_status[c[0]][c[1]][c[2]] = temp_big_boards_status
         board.small_boards_status[c[0]][c[1]/3][c[2]/3] = temp_small_boards_status
         if won:
-            self.last_blk_won^=1
+            self.ply_last_blk_won^=1
         else:
-            self.last_blk_won=0
+            self.ply_last_blk_won=0
         return selected
 
     def new_heuristic(self, ply, move, board):
-        self.hashx= [[[0 for k in range(3)] for j in range(3)] for i in range(2)]
     	boardstate=board.find_terminal_state()
     	if boardstate[1]=='WON':
     		if ply==self.ply:
@@ -238,7 +261,7 @@ class Manual_Player:
                     countq+=1
             if countp==0 or countq==0:
                 ohash+=sumx            
-        if ohash!=0:
+        if ohash>0:
             return ohash
 
         for i in range(2):
@@ -331,62 +354,189 @@ class Manual_Player:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
     	return self.hashx[i][j][k]
 	
-   
+    # def heuristic(self, ply, old_move, depth, board):
+    #     conj = self.conj
+    #     ply = self.ply
+    #     i=old_move[0]
+    #     j=old_move[1]/3
+    #     k=old_move[2]/3
+    #     temp=self.hashx[i][j][k]
+    #     self.hashx[i][j][k]=0
+    #     for m in range(3):
+    #         countp = 0
+    #         countj = 0
+    #         for z in range(3):
+    #             if board.big_boards_status[i][j*3+m][k*3+z] == ply:
+    #                 countp = countp + 1
+    #             elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
+    #                 countj = countj + 1
+    #         if countp == 3:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
+    #         elif countp == 2 and countj == 0:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 10
+    #         elif countp == 0 and countj == 2:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 10
+    #         elif countp == 0 and countj == 3:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 100
+    #         elif countp == 1 and countj == 0:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
+    #         elif countp == 0 and countj == 1:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
 
-    def minimax(self, depth, maximise1, alpha, beta, old_move, ply, board):
+    #     for m in range(3):
+    #         countp = 0
+    #         countj = 0
+    #         for z in range(3):
+    #             if board.big_boards_status[i][j*3+z][k*3+m] == ply:
+    #                 countp = countp + 1
+    #             elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
+    #                 countj = countj + 1
+    #         if countp == 3:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
+    #         elif countp == 2 and countj == 0:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 10
+    #         elif countp == 0 and countj == 2:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 10
+    #         elif countp == 0 and countj == 3:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 100
+    #         elif countp == 1 and countj == 0:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
+    #         elif countp == 0 and countj == 1:
+    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
+    #     countp = 0
+    #     countj = 0
+    #     for m in range(3):
+    #         if board.big_boards_status[i][j*3+m][k*3+m] == ply:
+    #             countp = countp + 1
+    #         elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
+    #             countj = countj + 1
+    #     if countp == 3:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 100
+    #     elif countp == 2 and countj == 0:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 10
+    #     elif countp == 0 and countj == 2:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 10
+    #     elif countp == 0 and countj == 3:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 100
+    #     elif countp == 1 and countj == 0:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 1
+    #     elif countp == 0 and countj == 1:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 1
+    #     countp = 0
+    #     countj = 0
+    #     for m in range(3):
+    #         if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
+    #             countp = countp + 1
+    #         elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
+    #             countj = countj + 1
+    #     if countp == 3:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 100
+    #     elif countp == 2 and countj == 0:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 10
+    #     elif countp == 0 and countj == 2:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 10/5
+    #     elif countp == 0 and countj == 3:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 100/5
+    #     elif countp == 1 and countj == 0:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 1
+    #     elif countp == 0 and countj == 1:
+    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 1/5
+
+    #     ohash = 0
+    #     if depth<depth_limit:
+    #         return ohash
+    #     self.hashx[i][j][k]=temp    
+    #     for k in range(2):
+    #         for i in range(3):
+    #             sumx = 0
+    #             for j in range(3):
+    #                 sumx = sumx + self.hashx[k][i][j]
+    #             if abs(sumx) >= 0 and abs(sumx) < 1:
+    #                 ohash = ohash + sumx
+    #             elif abs(sumx) >= 1 and abs(sumx) < 2:
+    #                 ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+    #             elif abs(sumx) >= 2 and abs(sumx) < 3:
+    #                 ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
+    #             else:
+    #                 ohash=100*sumx/abs(sumx)
+
+    #         for i in range(3):
+    #             sumx = 0
+    #             for j in range(3):
+    #                 sumx = sumx + self.hashx[k][j][i]
+    #             if abs(sumx) >= 0 and abs(sumx) < 1:
+    #                 ohash = ohash + sumx
+    #             elif abs(sumx) >= 1 and abs(sumx) < 2:
+    #                 ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+    #             elif abs(sumx) >= 2 and abs(sumx) < 3:
+    #                 ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
+    #             else:
+    #                 ohash=100*sumx/abs(sumx)
+    #         sumx = 0
+
+    #         for i in range(3):
+    #             sumx = sumx + self.hashx[k][i][i]
+    #         if abs(sumx) >= 0 and abs(sumx) < 1:
+    #             ohash = ohash + sumx
+    #         elif abs(sumx) >= 1 and abs(sumx) < 2:
+    #             ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+    #         elif abs(sumx) >= 2 and abs(sumx) < 3:
+    #             ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
+    #         else:
+    #             ohash=100*sumx/abs(sumx)
+
+    #         sumx = 0
+    #         for i in range(3):
+    #             sumx = sumx + self.hashx[k][2 - i][2 - i]
+    #         if abs(sumx) >= 0 and abs(sumx) < 1:
+    #             ohash = ohash + sumx
+    #         elif abs(sumx) >= 1 and abs(sumx) < 2:
+    #             ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
+    #         elif abs(sumx) >= 2 and abs(sumx) < 3:
+    #             ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
+    #         else:
+    #             ohash=100*sumx/abs(sumx)
+
+    #     return ohash
+
+    def minimax(self, depth, maximise, alpha, beta, old_move, ply, board):
         conj = "o"
         if conj == ply:
             conj = "x"
-        if depth >= self.level or board.find_terminal_state()!= ('CONTINUE', '-') or time.time()-self.starttime >= TIME:
-        	return self.new_heuristic(conj, old_move, board)
-        	
-        possible_moves = board.find_valid_move_cells(old_move)
-        temp_ply=self.ply_blk_won
-        temp_conj=self.conj_blk_won
+
         if self.ply==ply:
             maximise=1
         else:
             maximise=0
+
+        if  board.find_terminal_state()!= ('CONTINUE', '-')or depth>=self.level:
+        	return self.new_heuristic(conj, old_move, board)
+        	
+        possible_moves = board.find_valid_move_cells(old_move)
+        
         if maximise:
             bestvalue = -self.infi
             for c in possible_moves:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]][c[1]/3][c[2]/3]
-               	self.update_zubrist_block(c, ply)
-################################
-                flag=ply
-                conj_flag=conj
-                x, won=board.update(old_move, c, flag)
+                val, won=board.update(old_move, c, ply)
+                temp_ply_blk_won=self.ply_blk_won
+                temp_conj_blk_won=self.conj_blk_won
                 if won:
-                    if self.ply==flag:
+                    if self.ply==ply:
                         self.ply_blk_won^=1
                     else:
-                       self.conj_blk_won^=1
+                        self.conj_blk_won^=1
+               	self.update_zubrist_block(c, ply)
+                val=-self.infi
+                if self.ply==ply and self.ply_blk_won:
+                    val = self.minimax(depth+1, 0, alpha, beta, c, ply, board)
+                    self.ply_blk_won=0
+                elif self.ply!=ply and self.conj_blk_won:
+                    val = self.minimax(depth+1, 0, alpha, beta, c, ply, board) 
+                    self.conj_blk_won=0                   
                 else:
-                    if self.ply==flag:
-                        self.ply_blk_won=0
-                    else:
-                       self.conj_blk_won=0
-                d=-self.infi
-                if flag==self.ply:
-                    if self.ply_blk_won and won:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, flag, board)
-                    else:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, conj_flag, board)
-                else:
-                    if self.conj_blk_won and won:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, conj_flag, board)
-                    else:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, flag, board)
-                val=d                
-###########################
-                self.ply_blk_won=temp_ply
-                self.conj_blk_won=temp_conj
-
+                    val = self.minimax(depth+1, 0, alpha, beta, c, conj, board) 
                 bestvalue = max(val, bestvalue)
                 alpha = max(alpha, bestvalue)
                 board.big_boards_status[c[0]][c[1]
@@ -394,7 +544,9 @@ class Manual_Player:
                 board.small_boards_status[c[0]][c[1] /
                                                 3][c[2]/3] = temp_small_boards_status
                 self.update_zubrist_block(c, ply)
-                if beta <= alpha or time.time()-self.starttime >= TIME:
+                self.ply_blk_won=temp_ply_blk_won
+                self.conj_blk_won=temp_conj_blk_won
+                if beta <= alpha:
                     return bestvalue
             return bestvalue
         else:
@@ -403,41 +555,24 @@ class Manual_Player:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
                 temp_small_boards_status = board.small_boards_status[c[0]
                                                                      ][c[1]/3][c[2]/3]
-                self.update_zubrist_block(c, ply)
-            ################################################################
-                flag=ply
-                conj_flag=conj
-                x, won=board.update(old_move, c, flag)
+                val, won=board.update(old_move, c, ply)
+                temp_ply_blk_won=self.ply_blk_won
+                temp_conj_blk_won=self.conj_blk_won
                 if won:
-                    if self.ply==flag:
+                    if self.ply==ply:
                         self.ply_blk_won^=1
                     else:
-                       self.conj_blk_won^=1
+                        self.conj_blk_won^=1
+                self.update_zubrist_block(c, ply)
+                val=-self.infi
+                if self.ply==ply and self.ply_blk_won:
+                    val = self.minimax(depth+1, 0, alpha, beta, c, ply, board)
+                    self.ply_blk_won=0
+                elif self.ply!=ply and self.conj_blk_won:
+                    val = self.minimax(depth+1, 0, alpha, beta, c, ply, board) 
+                    self.conj_blk_won=0                   
                 else:
-                    if self.ply==flag:
-                        self.ply_blk_won=0
-                    else:
-                       self.conj_blk_won=0
-                d=self.infi
-                if flag==self.ply:
-                    if self.ply_blk_won and won:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, flag, board)
-                    else:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, conj_flag, board)
-                else:
-                    if self.conj_blk_won and won:
-                        d = self.minimax(1+depth, 0, alpha,
-                                beta, c, conj_flag, board)
-                    else:
-                        d = self.minimax(1+depth, 0, alpha,
-                               beta, c, flag, board)
-                val=d
-                self.ply_blk_won=temp_ply
-                self.conj_blk_won=temp_conj
-                
-###########################
+                    val = self.minimax(depth+1, 0, alpha, beta, c, conj, board) 
 
                 bestvalue = min(val, bestvalue)
                 beta = min(beta, bestvalue)
@@ -446,7 +581,9 @@ class Manual_Player:
                 board.small_boards_status[c[0]][c[1] /
                                                 3][c[2]/3] = temp_small_boards_status
                 self.update_zubrist_block(c, ply)
-                if beta <= alpha  or time.time()-self.starttime >= TIME:
+                self.ply_blk_won=temp_ply_blk_won
+                self.conj_blk_won=temp_conj_blk_won
+                if beta <= alpha:
                     return bestvalue
             return bestvalue
 
@@ -794,11 +931,8 @@ if __name__ == '__main__':
         obj1 = Manual_Player()
         obj2 = Manual_Player()
     elif option == '4':
-        obj1 = Player7(20)
+        obj1 = Bot()
         obj2 = Manual_Player()
-    elif option == '5':
-        obj1 = Manual_Player()
-        obj2 = Team72v3(6)
     else:
         print 'Invalid option'
         sys.exit(1)
