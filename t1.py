@@ -148,12 +148,12 @@ class Manual_Player:
         bestval = -self.infi
       	self.init_zobrist(board)
         selected=cells[random.randrange(len(cells))]
-        self.level=5
+        self.level=2
        
         if old_move==(-1,-1,-1):
             return selected
 
-        while self.level<6:
+        while self.level<3:
             self.init_zobrist(board)    
             for c in cells:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
@@ -942,7 +942,7 @@ if __name__ == '__main__':
         obj2 = Manual_Player()
     elif option == '4':
         obj1 = Manual_Player()
-        obj2 = Team72v3()
+        obj2 = Player7(TIME)
     else:
         print 'Invalid option'
         sys.exit(1)
