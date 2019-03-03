@@ -66,63 +66,6 @@ class Manual_Player:
 	    						self.block_hash[k][i][j]^=self.block_zob[2*c+1]
 	    					c+=1
 	            
-	    						
-    # def chck(self,board,old_move,ply):
-    #     conj = self.conj
-    #     ply = self.ply
-    #     i=old_move[0]
-    #     j=old_move[1]/3
-    #     k=old_move[2]/3
-    #     for m in range(3):
-    #         countp = 0
-    #         countj = 0
-    #         for z in range(3):
-    #             if board.big_boards_status[i][j*3+m][k*3+z] == ply:
-    #                 countp = countp + 1
-    #             elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
-    #                 countj = countj + 1
-    #         if countp == 3 :
-    #             return 1000
-    #         elif countp == 1 and countj == 2:
-    #             return 500    
-    #     for m in range(3):
-    #         countp = 0
-    #         countj = 0
-    #         for z in range(3):
-    #             if board.big_boards_status[i][j*3+z][k*3+m] == ply:
-    #                 countp = countp + 1
-    #             elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
-    #                 countj = countj + 1
-    #         if countp == 3 :
-    #             return 1000
-    #         elif countp == 1 and countj == 2:
-    #             return 500  
-        
-    #     countp = 0
-    #     countj = 0
-    #     for m in range(3):
-    #         if board.big_boards_status[i][j*3+m][k*3+m] == ply:
-    #             countp = countp + 1
-    #         elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
-    #             countj = countj + 1
-    #     if countp == 3 :
-    #             return 1000
-    #     elif countp == 1 and countj == 2:
-    #             return 500  
-
-    #     countp = 0
-    #     countj = 0
-    #     for m in range(3):
-    #         if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
-    #             countp = countp + 1
-    #         elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
-    #             countj = countj + 1
-    #     if countp == 3 :
-    #             return 1000
-    #     elif countp == 1 and countj == 2:
-    #             return 500  
-
-    #     return 0
 
     def update_zubrist_block(self, move, ply):
     	if ply==self.ply:
@@ -148,12 +91,12 @@ class Manual_Player:
         bestval = -self.infi
       	self.init_zobrist(board)
         selected=cells[random.randrange(len(cells))]
-        self.level=2
+        self.level=5
        
         if old_move==(-1,-1,-1):
             return selected
 
-        while self.level<3:
+        while self.level<6:
             self.init_zobrist(board)    
             for c in cells:
                 temp_big_boards_status = board.big_boards_status[c[0]][c[1]][c[2]]
@@ -194,8 +137,11 @@ class Manual_Player:
         else:
             self.ply_last_blk_won=0
         return selected
-
-    def new_heuristic(self, ply, move, board):
+    def find_difference(self, ply, move, board):
+        x=self.new_heuristic(ply, move, board, 1)
+        x+=self.new_heuristic(ply, move, board, -1)
+        return x
+    def new_heuristic(self, ply, move, board, f):
     	boardstate=board.find_terminal_state()
     	if boardstate[1]=='WON':
     		if ply==self.ply:
@@ -206,19 +152,18 @@ class Manual_Player:
     		for j in range(3):
     			for k in range(3):
     				if board.small_boards_status[i][j][k]==self.ply:
-    					self.hashx[i][j][k]=self.infi/100
+    					self.hashx[i][j][k]=self.infi/100*f
     				elif board.small_boards_status[i][j][k]==self.conj:
-    					self.hashx[i][j][k]=-self.infi/100
+    					self.hashx[i][j][k]=-self.infi/100*f
     				else:
     					if self.block_hash[i][j][k] in self.dict:
-    						self.hashx[i][j][k]=self.dict[self.block_hash[i][j][k]]
+    						self.hashx[i][j][k]=self.dict[self.block_hash[i][j][k]]*f
     						if len(self.dict)>100:
     							self.dict={}
     					else:
-    						self.hashx[i][j][k]=self.computecost(board, i, j, k)
+    						self.hashx[i][j][k]=self.computecost(board, i, j, k)*f
     						self.dict[self.block_hash[i][j][k]]=self.hashx[i][j][k]
     	return self.computeTotalCost(board)
-#        self.inc_costs = [0,1, 100, 10000, 100000]
     def computeTotalCost(self, board):
         ohash=0
         for k in range(2):
@@ -364,150 +309,6 @@ class Manual_Player:
             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
     	return self.hashx[i][j][k]
 	
-    # def heuristic(self, ply, old_move, depth, board):
-    #     conj = self.conj
-    #     ply = self.ply
-    #     i=old_move[0]
-    #     j=old_move[1]/3
-    #     k=old_move[2]/3
-    #     temp=self.hashx[i][j][k]
-    #     self.hashx[i][j][k]=0
-    #     for m in range(3):
-    #         countp = 0
-    #         countj = 0
-    #         for z in range(3):
-    #             if board.big_boards_status[i][j*3+m][k*3+z] == ply:
-    #                 countp = countp + 1
-    #             elif board.big_boards_status[i][j*3+m][k*3+z] == conj:
-    #                 countj = countj + 1
-    #         if countp == 3:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
-    #         elif countp == 2 and countj == 0:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 10
-    #         elif countp == 0 and countj == 2:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 10
-    #         elif countp == 0 and countj == 3:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 100
-    #         elif countp == 1 and countj == 0:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
-    #         elif countp == 0 and countj == 1:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
-
-    #     for m in range(3):
-    #         countp = 0
-    #         countj = 0
-    #         for z in range(3):
-    #             if board.big_boards_status[i][j*3+z][k*3+m] == ply:
-    #                 countp = countp + 1
-    #             elif board.big_boards_status[i][j*3+z][k*3+m] == conj:
-    #                 countj = countj + 1
-    #         if countp == 3:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 100
-    #         elif countp == 2 and countj == 0:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 10
-    #         elif countp == 0 and countj == 2:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 10
-    #         elif countp == 0 and countj == 3:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 100
-    #         elif countp == 1 and countj == 0:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] + 1
-    #         elif countp == 0 and countj == 1:
-    #             self.hashx[i][j][k] = self.hashx[i][j][k] - 1
-    #     countp = 0
-    #     countj = 0
-    #     for m in range(3):
-    #         if board.big_boards_status[i][j*3+m][k*3+m] == ply:
-    #             countp = countp + 1
-    #         elif board.big_boards_status[i][j*3+m][k*3+m] == conj:
-    #             countj = countj + 1
-    #     if countp == 3:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 100
-    #     elif countp == 2 and countj == 0:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 10
-    #     elif countp == 0 and countj == 2:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 10
-    #     elif countp == 0 and countj == 3:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 100
-    #     elif countp == 1 and countj == 0:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 1
-    #     elif countp == 0 and countj == 1:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 1
-    #     countp = 0
-    #     countj = 0
-    #     for m in range(3):
-    #         if board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == ply:
-    #             countp = countp + 1
-    #         elif board.big_boards_status[i][j*3 + 2 - m][k*3 + 2 - m] == conj:
-    #             countj = countj + 1
-    #     if countp == 3:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 100
-    #     elif countp == 2 and countj == 0:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 10
-    #     elif countp == 0 and countj == 2:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 10/5
-    #     elif countp == 0 and countj == 3:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 100/5
-    #     elif countp == 1 and countj == 0:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] + 1
-    #     elif countp == 0 and countj == 1:
-    #         self.hashx[i][j][k] = self.hashx[i][j][k] - 1/5
-
-    #     ohash = 0
-    #     if depth<depth_limit:
-    #         return ohash
-    #     self.hashx[i][j][k]=temp    
-    #     for k in range(2):
-    #         for i in range(3):
-    #             sumx = 0
-    #             for j in range(3):
-    #                 sumx = sumx + self.hashx[k][i][j]
-    #             if abs(sumx) >= 0 and abs(sumx) < 1:
-    #                 ohash = ohash + sumx
-    #             elif abs(sumx) >= 1 and abs(sumx) < 2:
-    #                 ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
-    #             elif abs(sumx) >= 2 and abs(sumx) < 3:
-    #                 ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
-    #             else:
-    #                 ohash=100*sumx/abs(sumx)
-
-    #         for i in range(3):
-    #             sumx = 0
-    #             for j in range(3):
-    #                 sumx = sumx + self.hashx[k][j][i]
-    #             if abs(sumx) >= 0 and abs(sumx) < 1:
-    #                 ohash = ohash + sumx
-    #             elif abs(sumx) >= 1 and abs(sumx) < 2:
-    #                 ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
-    #             elif abs(sumx) >= 2 and abs(sumx) < 3:
-    #                 ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
-    #             else:
-    #                 ohash=100*sumx/abs(sumx)
-    #         sumx = 0
-
-    #         for i in range(3):
-    #             sumx = sumx + self.hashx[k][i][i]
-    #         if abs(sumx) >= 0 and abs(sumx) < 1:
-    #             ohash = ohash + sumx
-    #         elif abs(sumx) >= 1 and abs(sumx) < 2:
-    #             ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
-    #         elif abs(sumx) >= 2 and abs(sumx) < 3:
-    #             ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
-    #         else:
-    #             ohash=100*sumx/abs(sumx)
-
-    #         sumx = 0
-    #         for i in range(3):
-    #             sumx = sumx + self.hashx[k][2 - i][2 - i]
-    #         if abs(sumx) >= 0 and abs(sumx) < 1:
-    #             ohash = ohash + sumx
-    #         elif abs(sumx) >= 1 and abs(sumx) < 2:
-    #             ohash = ohash + 1*(sumx-1)/abs(sumx-1) + (10-1)*(sumx-1)
-    #         elif abs(sumx) >= 2 and abs(sumx) < 3:
-    #             ohash = ohash + 10*(sumx-2)/abs(sumx-2) + (100-90)*(sumx-2)
-    #         else:
-    #             ohash=100*sumx/abs(sumx)
-
-    #     return ohash
 
     def minimax(self, depth, maximise, alpha, beta, old_move, ply, board):
         conj = "o"
@@ -519,8 +320,8 @@ class Manual_Player:
         else:
             maximise=0
 
-        if  board.find_terminal_state()!= ('CONTINUE', '-')or depth>=self.level:
-        	return self.new_heuristic(conj, old_move, board)
+        if  board.find_terminal_state()!= ('CONTINUE', '-')or depth>=self.level or time.time()-self.starttime>=TIME:
+        	return self.find_difference(conj, old_move, board)
         	
         possible_moves = board.find_valid_move_cells(old_move)
         
@@ -556,7 +357,7 @@ class Manual_Player:
                 self.update_zubrist_block(c, ply)
                 self.ply_blk_won=temp_ply_blk_won
                 self.conj_blk_won=temp_conj_blk_won
-                if beta <= alpha:
+                if beta <= alpha or time.time()-self.starttime>=TIME:
                     return bestvalue
             return bestvalue
         else:
@@ -593,7 +394,7 @@ class Manual_Player:
                 self.update_zubrist_block(c, ply)
                 self.ply_blk_won=temp_ply_blk_won
                 self.conj_blk_won=temp_conj_blk_won
-                if beta <= alpha:
+                if beta <= alpha or time.time()-self.starttime>=TIME:
                     return bestvalue
             return bestvalue
 
@@ -938,11 +739,11 @@ if __name__ == '__main__':
         obj2 = Random_Player()
         obj1 = Manual_Player()
     elif option == '3':
-        obj1 = Manual_Player()
+        obj1 = Player7(TIME)
         obj2 = Manual_Player()
     elif option == '4':
         obj1 = Manual_Player()
-        obj2 = Player7(TIME)
+        obj2 = Team72v3()
     else:
         print 'Invalid option'
         sys.exit(1)
